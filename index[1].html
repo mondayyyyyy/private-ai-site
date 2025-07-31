@@ -1,49 +1,1253 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Private AI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Custom font for a clean, modern look */
         body {
-            background-color: #0f0f0f;
-            color: #f1f1f1;
-            font-family: Arial, sans-serif;
-            margin: 0;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease; /* Smooth theme transition */
+        }
+        /* Basic scroll behavior for smooth transitions if links are added */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* Custom scrollbar for chat history */
+        .chat-history::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-history::-webkit-scrollbar-track {
+            background: var(--bg-color-darker); /* Use CSS variable */
+            border-radius: 10px;
+        }
+        .chat-history::-webkit-scrollbar-thumb {
+            background: var(--text-color-light); /* Use CSS variable */
+            border-radius: 10px;
+        }
+        .chat-history::-webkit-scrollbar-thumb:hover {
+            background: var(--text-color-medium); /* Use CSS variable */
+        }
+        /* Fade in animation for messages and images */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* CSS Variables for Theming */
+        :root {
+            /* Dark Theme Defaults */
+            --bg-gradient-from: #0a0a0f;
+            --bg-gradient-to: #0e0e2e;
+            --text-color: #e0e0e0;
+            --header-bg: rgba(17, 24, 39, 0.5); /* gray-900 with opacity */
+            --card-bg: rgba(31, 41, 55, 0.6); /* gray-800 with opacity */
+            --card-border: #1e3a8a; /* blue-700 */
+            --card-hover-border: #22d3ee; /* cyan-500 */
+            --input-bg: #374151; /* gray-700 */
+            --input-border: #4b5563; /* gray-600 */
+            --chat-bubble-user: #1d4ed8; /* blue-700 */
+            --chat-bubble-ai: #374151; /* gray-700 */
+            --sidebar-bg: #1f2937; /* gray-800 */
+            --sidebar-border: #374151; /* gray-700 */
+            --sidebar-item-bg: #374151; /* gray-700 */
+            --sidebar-item-hover-bg: #4b5563; /* gray-600 */
+            --bg-color-darker: #111827; /* gray-900 */
+            --text-color-light: #9ca3af; /* gray-400 */
+            --text-color-medium: #6b7280; /* gray-500 */
+            --modal-bg: #1f2937; /* gray-800 */
+            --modal-border: #1e3a8a; /* blue-700 */
+        }
+
+        body.light-theme {
+            /* Light Theme Overrides */
+            --bg-gradient-from: #e0f2f7; /* Light blue */
+            --bg-gradient-to: #c5e7f0; /* Lighter blue */
+            --text-color: #333333;
+            --header-bg: rgba(255, 255, 255, 0.8);
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-border: #a7d9f7; /* light blue */
+            --card-hover-border: #4fc3f7; /* brighter blue */
+            --input-bg: #f0f0f0;
+            --input-border: #d1d5db; /* gray-300 */
+            --chat-bubble-user: #81d4fa; /* light blue-400 */
+            --chat-bubble-ai: #e0e0e0;
+            --sidebar-bg: #f8f8f8;
+            --sidebar-border: #d1d5db;
+            --sidebar-item-bg: #e5e7eb; /* gray-200 */
+            --sidebar-item-hover-bg: #d1d5db; /* gray-300 */
+            --bg-color-darker: #f3f4f6; /* gray-100 */
+            --text-color-light: #6b7280; /* gray-500 */
+            --text-color-medium: #4b5563; /* gray-600 */
+            --modal-bg: #ffffff;
+            --modal-border: #a7d9f7;
+        }
+
+        /* Apply CSS variables */
+        .bg-gradient-to-br.from-gray-950.to-blue-900 {
+            background: linear-gradient(to bottom right, var(--bg-gradient-from), var(--bg-gradient-to));
+        }
+        .text-gray-100 { color: var(--text-color); }
+        .bg-gray-900.bg-opacity-50 { background-color: var(--header-bg); }
+        .bg-gray-800.bg-opacity-60 { background-color: var(--card-bg); }
+        .border-blue-700 { border-color: var(--card-border); }
+        .hover\\:border-cyan-500:hover { border-color: var(--card-hover-border); }
+        .bg-gray-700 { background-color: var(--input-bg); }
+        .border-gray-600 { border-color: var(--input-border); }
+        .chat-history .bg-blue-700 { background-color: var(--chat-bubble-user); }
+        .chat-history .bg-gray-700 { background-color: var(--chat-bubble-ai); }
+        .bg-gray-800.border-r { background-color: var(--sidebar-bg); border-color: var(--sidebar-border); }
+        .bg-gray-700.hover\\:bg-gray-600 { background-color: var(--sidebar-item-bg); }
+        .bg-gray-700.hover\\:bg-gray-600:hover { background-color: var(--sidebar-item-hover-bg); }
+        #settings-modal > div, #auth-modal > div {
+            background-color: var(--modal-bg);
+            border-color: var(--modal-border);
+        }
+
+
+        /* Sidebar transition */
+        .ai-chat-interface-container {
+            transition: grid-template-columns 0.3s ease-in-out;
+            display: grid;
+            grid-template-columns: 250px 1fr; /* Default: sidebar visible */
+        }
+        .ai-chat-interface-container.sidebar-hidden {
+            grid-template-columns: 0px 1fr; /* Sidebar hidden */
+        }
+        .ai-chat-interface-container.sidebar-hidden .chat-sidebar {
+            overflow: hidden;
+            min-width: 0;
             padding: 0;
-            text-align: center;
+            border-right: none;
         }
-        header {
-            background: #1c1c1c;
-            padding: 1.5rem;
+        /* Ensure main chat content takes full width when sidebar is hidden */
+        .ai-chat-interface-container.sidebar-hidden .main-chat-content {
+            width: 100%;
         }
-        h1 {
-            font-size: 2.5rem;
-        }
-        p {
-            font-size: 1.1rem;
-        }
-        footer {
-            margin-top: 3rem;
-            padding: 1rem;
-            background: #1c1c1c;
-            font-size: 0.9rem;
+        .chat-sidebar {
+            transition: all 0.3s ease-in-out;
         }
     </style>
 </head>
-<body>
-    <header>
-        <h1>Welcome to Private AI</h1>
-        <p>Your secure, smart AI experience.</p>
-    </header>
+<body class="bg-gradient-to-br from-gray-950 to-blue-900 text-gray-100 min-h-screen flex flex-col">
 
-    <main>
-        <p>This is a placeholder homepage for your Private AI project. Customize it however you like!</p>
-    </main>
+    <!-- Main Website Content (initially visible) -->
+    <div id="website-content" class="flex-grow flex flex-col">
+        <!-- Header Section -->
+        <header class="w-full py-8 px-4 sm:px-8 text-center bg-gray-900 bg-opacity-50 backdrop-blur-sm shadow-lg">
+            <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between">
+                <!-- Logo and Title -->
+                <div class="flex items-center mb-4 sm:mb-0">
+                    <!-- LOGO REMOVED FROM HERE -->
+                    <h1 class="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-600">
+                        Private AI
+                    </h1>
+                </div>
+                <!-- Auth Buttons -->
+                <div id="auth-buttons" class="flex gap-4">
+                    <button id="signup-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Sign Up
+                    </button>
+                    <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Login
+                    </button>
+                </div>
+            </div>
+            <p class="text-xl sm:text-2xl text-gray-300 max-w-2xl mx-auto mt-4">
+                Your personal gateway to intelligent, secure, and private AI.
+            </p>
+        </header>
 
-    <footer>
-        &copy; 2025 Private AI. All rights reserved.
-    </footer>
+        <!-- Main Content Area - Sections -->
+        <main class="flex-grow container mx-auto p-4 sm:p-8 py-12">
+            <section id="about" class="mb-16 bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-xl shadow-xl p-8 sm:p-10 border border-blue-700 hover:border-cyan-500 transition-all duration-300">
+                <h2 class="text-3xl sm:text-4xl font-bold text-cyan-300 mb-6 text-center">About Private AI</h2>
+                <p class="text-lg text-gray-300 leading-relaxed mb-4">
+                    Private AI is designed with your security and autonomy at its core. Unlike traditional AI services,
+                    your data remains exclusively yours, processed locally or within a highly secure, encrypted environment.
+                    We believe in empowering individuals with the capabilities of artificial intelligence without
+                    compromising personal privacy.
+                </p>
+                <p class="text-lg text-gray-300 leading-relaxed">
+                    Our mission is to provide cutting-edge AI functionalities that adapt to your needs, learn from your
+                    interactions, and enhance your daily life, all while ensuring your digital footprint stays private.
+                </p>
+            </section>
+
+            <section id="capabilities" class="mb-16 bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-xl shadow-xl p-8 sm:p-10 border border-blue-700 hover:border-cyan-500 transition-all duration-300">
+                <h2 class="text-3xl sm:text-4xl font-bold text-cyan-300 mb-6 text-center">Core AI Capabilities</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gray-700 bg-opacity-70 p-6 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-semibold text-indigo-300 mb-3">Intelligent Assistance</h3>
+                        <p class="text-gray-300">
+                            From scheduling and reminders to information retrieval, Private AI acts as your smart assistant,
+                            learning your preferences to provide personalized support.
+                        </p>
+                    </div>
+                    <div class="bg-gray-700 bg-opacity-70 p-6 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-semibold text-indigo-300 mb-3">Secure Data Analysis</h3>
+                        <p class="text-gray-300">
+                            Process and analyze your personal data (documents, notes, media) with advanced AI,
+                            identifying insights and patterns without ever sending your information to external servers.
+                        </p>
+                    </div>
+                    <div class="bg-gray-700 bg-opacity-70 p-6 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-semibold text-indigo-300 mb-3">Creative Generation</h3>
+                        <p class="text-gray-300">
+                            Unleash your creativity with AI-powered tools for writing, art generation, and content
+                            creation, all within your private domain.
+                        </p>
+                    </div>
+                    <div class="bg-gray-700 bg-opacity-70 p-6 rounded-lg shadow-md">
+                        <h3 class="text-2xl font-semibold text-indigo-300 mb-3">Adaptive Learning</h3>
+                        <p class="text-gray-300">
+                            The AI continuously learns and improves based on your interactions, becoming more efficient
+                            and tailored to your unique workflow over time.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="privacy" class="mb-16 bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-xl shadow-xl p-8 sm:p-10 border border-blue-700 hover:border-cyan-500 transition-all duration-300">
+                <h2 class="text-3xl sm:text-4xl font-bold text-cyan-300 mb-6 text-center">Privacy & Data Security</h2>
+                <p class="text-lg text-gray-300 leading-relaxed mb-4">
+                    Your privacy is our utmost priority. Private AI employs state-of-the-art encryption and
+                    decentralized processing techniques to ensure your personal information never leaves your control.
+                    We adhere to a strict no-data-collection policy for user-generated content and interactions.
+                </p>
+                <p class="text-lg text-gray-300 leading-relaxed">
+                    Rest assured that your conversations, documents, and personal insights are protected with the
+                    highest standards of digital security, giving you peace of mind in the age of AI.
+                </p>
+            </section>
+
+            <section id="contact" class="bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-xl shadow-xl p-8 sm:p-10 border border-blue-700 hover:border-cyan-500 transition-all duration-300">
+                <h2 class="text-3xl sm:text-4xl font-bold text-cyan-300 mb-6 text-center">Get Started with Private AI</h2>
+                <p class="text-lg text-gray-300 leading-relaxed text-center mb-6">
+                    Ready to experience AI that respects your privacy? Click below to chat with Private AI.
+                </p>
+                <div class="flex justify-center">
+                    <button id="learn-more-btn" class="bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 text-lg">
+                        Chat with Private AI
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer Section -->
+        <footer class="w-full py-6 px-4 sm:px-8 text-center bg-gray-900 bg-opacity-50 backdrop-blur-sm mt-12">
+            <p class="text-gray-400 text-sm">&copy; 2025 Private AI. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- AI Chat Interface (initially hidden) -->
+    <div id="ai-chat-interface" class="hidden flex-grow ai-chat-interface-container">
+        <!-- Chat Sidebar -->
+        <div id="chat-sidebar" class="w-1/4 min-w-[250px] bg-gray-800 border-r border-gray-700 p-4 flex flex-col shadow-lg">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <button id="sidebar-toggle-btn" class="text-gray-400 hover:text-white mr-2 text-2xl" title="Toggle Sidebar">
+                        ☰
+                    </button>
+                    <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-600">
+                        Private AI
+                    </h2>
+                </div>
+                <button id="back-to-website-btn" class="text-gray-400 hover:text-white text-2xl" title="Back to Website">
+                    &times;
+                </button>
+            </div>
+
+            <button id="new-chat-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 mb-4">
+                + New Chat
+            </button>
+
+            <div class="relative mb-4">
+                <input
+                    type="text"
+                    id="chat-search-input"
+                    placeholder="Search chats..."
+                    class="w-full p-2 pl-8 rounded-lg bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <svg class="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+
+            <!-- Placeholder for chat list/tabs -->
+            <nav class="flex-grow overflow-y-auto mb-4">
+                <ul id="chat-list">
+                    <li class="mb-2">
+                        <a href="#" class="block p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-gray-200">
+                            Recent Chat 1
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="block p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-gray-200">
+                            Image Generation Session
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="block p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors duration-200 text-gray-200">
+                            Summarization Query
+                        </a>
+                    </li>
+                    <!-- More chat items would go here -->
+                </ul>
+            </nav>
+
+            <!-- Logout Button (visible when logged in) -->
+            <button id="logout-btn" class="hidden w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 mb-4">
+                Logout
+            </button>
+
+            <!-- Settings Button -->
+            <button id="settings-btn" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-lg shadow-md transition-colors duration-200">
+                Settings
+            </button>
+        </div>
+
+        <!-- Main Chat Content Area -->
+        <div class="flex-grow flex flex-col main-chat-content">
+            <!-- Chat Header (top bar) -->
+            <div class="flex items-center justify-end p-4 bg-gray-800 border-b border-gray-700 shadow-lg">
+                <span class="text-gray-400 text-sm mr-2">2.5 Flash</span>
+                <button class="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-full shadow-md transition-colors duration-200">
+                    Upgrade
+                </button>
+                <div class="w-8 h-8 bg-gray-600 rounded-full ml-4 flex items-center justify-center text-white text-sm">
+                    <img id="user-avatar" src="https://placehold.co/32x32/888888/ffffff?text=U" alt="User Icon" class="rounded-full">
+                </div>
+                <span id="user-email-display" class="text-gray-300 ml-2 text-sm hidden"></span>
+            </div>
+
+            <!-- Chat History Display -->
+            <div id="chat-history" class="flex-grow p-4 sm:p-8 overflow-y-auto chat-history flex flex-col justify-end">
+                <!-- Initial greeting to set a positive tone -->
+                <div class="text-center text-3xl font-bold text-blue-400 mb-8">
+                    Hello, User
+                </div>
+                <!-- Initial AI greeting will be added by startNewChat() -->
+                <div id="messages-container"></div>
+                <div id="loading-indicator" class="hidden text-center text-gray-400 text-lg mt-4">
+                    Thinking...
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="p-4 sm:p-6 bg-gray-800 border-t border-gray-700 shadow-inner">
+                <div class="relative flex items-center max-w-3xl mx-auto">
+                    <input
+                        type="text"
+                        id="user-input"
+                        placeholder="Ask Private AI anything, or try 'generate image' or 'summarize'..."
+                        class="flex-grow p-3 pr-12 rounded-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                        onkeydown="if(event.key === 'Enter') document.getElementById('send-btn').click()"
+                    />
+                    <button
+                        id="send-btn"
+                        class="absolute right-3 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-md transition-colors duration-200"
+                    >
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.82.983l5 1.429a1 1 0 001.169-1.409l-7-14z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <!-- Feature buttons -->
+                <div class="flex flex-wrap justify-center gap-3 mt-4 max-w-3xl mx-auto">
+                    <button id="generate-image-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm py-2 px-4 rounded-full transition-colors duration-200 shadow-md">
+                        ✨ Generate Image
+                    </button>
+                    <button id="edit-image-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm py-2 px-4 rounded-full transition-colors duration-200 shadow-md">
+                        ✨ Describe & Modify Image
+                    </button>
+                    <button id="summarize-text-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm py-2 px-4 rounded-full transition-colors duration-200 shadow-md">
+                        ✨ Summarize Text
+                    </button>
+                    <button id="translate-text-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm py-2 px-4 rounded-full transition-colors duration-200 shadow-md">
+                        ✨ Translate Text
+                    </button>
+                    <button id="write-story-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm py-2 px-4 rounded-full transition-colors duration-200 shadow-md">
+                        ✨ Write a Story
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full border border-blue-700 relative">
+            <button id="close-settings-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h3 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-600 mb-6 text-center">Settings</h3>
+
+            <div class="mb-6">
+                <p class="text-lg text-gray-300 mb-3">Theme:</p>
+                <div class="flex gap-4 justify-center">
+                    <button id="dark-theme-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Dark Mode
+                    </button>
+                    <button id="light-theme-btn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Light Mode
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <p class="text-lg text-gray-300 mb-3">Notification Preferences:</p>
+                <div class="flex gap-4 justify-center">
+                    <button class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Enable Notifications
+                    </button>
+                    <button class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Disable Notifications
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <p class="text-lg text-gray-300 mb-3">Data Management:</p>
+                <div class="flex gap-4 justify-center">
+                    <button class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Export Chat History
+                    </button>
+                    <button class="bg-red-700 hover:bg-red-800 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-200">
+                        Clear All Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center text-gray-400 text-sm mt-8">
+                Additional settings features coming soon!
+            </div>
+        </div>
+    </div>
+
+    <!-- Authentication Modal -->
+    <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full border border-blue-700 relative">
+            <button id="close-auth-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h3 id="auth-modal-title" class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-600 mb-6 text-center">Login</h3>
+
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label for="auth-email" class="block text-gray-300 text-sm font-bold mb-2">Email:</label>
+                    <input
+                        type="email"
+                        id="auth-email"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500"
+                        placeholder="your.email@example.com"
+                        required
+                    />
+                </div>
+                <div>
+                    <label for="auth-password" class="block text-gray-300 text-sm font-bold mb-2">Password:</label>
+                    <input
+                        type="password"
+                        id="auth-password"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500"
+                        placeholder="********"
+                        required
+                    />
+                </div>
+                <p id="auth-error-message" class="text-red-400 text-sm text-center hidden"></p>
+                <div class="flex items-center justify-between mt-6">
+                    <button
+                        type="submit"
+                        id="auth-submit-btn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-200"
+                    >
+                        Login
+                    </button>
+                    <button
+                        type="button"
+                        id="toggle-auth-mode-btn"
+                        class="inline-block align-baseline font-bold text-sm text-blue-400 hover:text-blue-200"
+                    >
+                        Don't have an account? Sign Up
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Firebase SDK Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // --- DOM Elements ---
+        const websiteContent = document.getElementById('website-content');
+        const aiChatInterface = document.getElementById('ai-chat-interface');
+        const learnMoreBtn = document.getElementById('learn-more-btn');
+        const backToWebsiteBtn = document.getElementById('back-to-website-btn');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const messagesContainer = document.getElementById('messages-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const generateImageBtn = document.getElementById('generate-image-btn');
+        const editImageBtn = document.getElementById('edit-image-btn');
+        const summarizeTextBtn = document.getElementById('summarize-text-btn');
+        const translateTextBtn = document.getElementById('translate-text-btn');
+        const writeStoryBtn = document.getElementById('write-story-btn');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const chatSearchInput = document.getElementById('chat-search-input');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsModalBtn = document.getElementById('close-settings-modal-btn');
+        const darkThemeBtn = document.getElementById('dark-theme-btn');
+        const lightThemeBtn = document.getElementById('light-theme-btn');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+        const chatSidebar = document.getElementById('chat-sidebar');
+
+        // Auth related elements
+        const signupBtn = document.getElementById('signup-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const authModal = document.getElementById('auth-modal');
+        const closeAuthModalBtn = document.getElementById('close-auth-modal-btn');
+        const authModalTitle = document.getElementById('auth-modal-title');
+        const authForm = document.getElementById('auth-form');
+        const authEmailInput = document.getElementById('auth-email');
+        const authPasswordInput = document.getElementById('auth-password');
+        const authSubmitBtn = document.getElementById('auth-submit-btn');
+        const toggleAuthModeBtn = document.getElementById('toggle-auth-mode-btn');
+        const authErrorMessage = document.getElementById('auth-error-message');
+        const userAvatar = document.getElementById('user-avatar');
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const authButtons = document.getElementById('auth-buttons');
+
+
+        // --- Firebase Initialization ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        let app;
+        let auth;
+        let db;
+        let currentUserId = null; // To store the current user's UID
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log("Firebase initialized successfully.");
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+            // Handle Firebase initialization errors gracefully
+            addMessage('ai', 'Oh dear, there was an issue initializing our secure connection. Please try refreshing the page!');
+        }
+
+        // --- Authentication State Listener ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in
+                currentUserId = user.uid;
+                console.log("User is signed in:", user.email, "UID:", user.uid);
+                userEmailDisplay.textContent = user.email;
+                userEmailDisplay.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                authButtons.classList.add('hidden'); // Hide signup/login buttons
+
+                // Check if user profile exists in Firestore, create if not
+                const userProfileRef = doc(db, `artifacts/${appId}/users/${currentUserId}/profile`, "data");
+                const userProfileSnap = await getDoc(userProfileRef);
+
+                if (!userProfileSnap.exists()) {
+                    console.log("User profile does not exist, creating one.");
+                    await setDoc(userProfileRef, {
+                        email: user.email,
+                        createdAt: new Date(),
+                        // Add any other default profile data here
+                    });
+                }
+
+            } else {
+                // User is signed out
+                currentUserId = null;
+                console.log("User is signed out.");
+                userEmailDisplay.textContent = '';
+                userEmailDisplay.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                authButtons.classList.remove('hidden'); // Show signup/login buttons
+            }
+        });
+
+        // Initial anonymous sign-in or custom token sign-in
+        async function initialSignIn() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    console.log("Signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                }
+            } catch (error) {
+                console.error("Error during initial sign-in:", error);
+                // Handle initial sign-in errors
+                addMessage('ai', 'A little hiccup with our initial connection, but no worries! Please try again or sign up to get started.');
+            }
+        }
+
+        // Call initial sign-in when the script loads
+        initialSignIn();
+
+
+        // --- Chat State Variables ---
+        let chatHistory = [];
+        let currentAIMode = 'chat';
+
+        // --- Theme Management ---
+        const THEME_KEY = 'private-ai-theme';
+
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+                localStorage.setItem(THEME_KEY, 'light');
+            } else {
+                document.body.classList.remove('light-theme');
+                localStorage.setItem(THEME_KEY, 'dark');
+            }
+        }
+
+        // Load theme on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem(THEME_KEY) || 'dark'; // Default to dark
+            applyTheme(savedTheme);
+        });
+
+        // --- Chat Functions ---
+        function addMessage(sender, text, isImage = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mb-4 p-3 rounded-lg max-w-[80%] fade-in ${
+                sender === 'user' ? 'bg-blue-700 self-end ml-auto' : 'bg-gray-700 self-start mr-auto'
+            }`;
+
+            if (isImage) {
+                const img = document.createElement('img');
+                img.src = text;
+                img.alt = sender === 'user' ? 'User provided image' : 'Generated image';
+                img.className = 'max-w-full h-auto rounded-lg shadow-md mt-2';
+                messageDiv.appendChild(img);
+            } else {
+                messageDiv.textContent = text;
+            }
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function startNewChat() {
+            messagesContainer.innerHTML = '';
+            chatHistory = [
+                { role: "user", parts: [{ text: "From now on, please respond in a consistently positive, encouraging, and helpful tone. Always maintain an optimistic and supportive demeanor." }] },
+                { role: "model", parts: [{ text: "Absolutely! I'm here to provide positive, encouraging, and helpful responses to all your questions. How can I assist you today?" }] }
+            ];
+            addMessage('ai', 'Hello! I\'m Private AI, your secure and helpful companion. How can I assist you today with a positive and encouraging outlook?');
+            userInput.focus();
+            currentAIMode = 'chat';
+            userInput.placeholder = "Ask Private AI anything, or try 'generate image' or 'summarize'...";
+        }
+
+        async function sendChatMessage(userMessage) {
+            addMessage('user', userMessage);
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            userInput.value = '';
+
+            loadingIndicator.classList.remove('hidden');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            const maxRetries = 5;
+            let retryCount = 0;
+            let delay = 1000;
+
+            while (retryCount < maxRetries) {
+                try {
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const aiResponse = result.candidates[0].content.parts[0].text;
+                        addMessage('ai', aiResponse);
+                        chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                    } else {
+                        addMessage('ai', 'Oh dear, I seem to be having a little trouble understanding that. Could you please rephrase your question?');
+                        console.error('Unexpected API response structure:', result);
+                    }
+                    loadingIndicator.classList.add('hidden');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    return;
+                } catch (error) {
+                    console.error('Error sending message to AI:', error);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        addMessage('ai', 'It seems I\'m experiencing a temporary hiccup! Please try again in a moment, and I\'ll be ready to help with a smile.');
+                        loadingIndicator.classList.add('hidden');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                }
+            }
+        }
+
+        async function generateImage(prompt) {
+            addMessage('user', `Generate image: "${prompt}"`);
+            userInput.value = '';
+            loadingIndicator.classList.remove('hidden');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            const maxRetries = 5;
+            let retryCount = 0;
+            let delay = 1000;
+
+            while (retryCount < maxRetries) {
+                try {
+                    const payload = { instances: { prompt: prompt }, parameters: { "sampleCount": 1} };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                        addMessage('ai', 'Here is your wonderful image!', true);
+                        addMessage('ai', imageUrl, true);
+                    } else {
+                        addMessage('ai', 'Oh dear, I couldn\'t quite generate that image. Could you try a different description?');
+                        console.error('Unexpected API response structure for image generation:', result);
+                    }
+                    loadingIndicator.classList.add('hidden');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    currentAIMode = 'chat';
+                    return;
+                } catch (error) {
+                    console.error('Error generating image:', error);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        addMessage('ai', 'I\'m so sorry, I\'m having a little trouble creating that image right now. Please try again later!');
+                        loadingIndicator.classList.add('hidden');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        currentAIMode = 'chat';
+                    }
+                }
+            }
+        }
+
+        async function editImage(originalDescription, modificationPrompt) {
+            addMessage('user', `Edit image: "${originalDescription}" with "${modificationPrompt}"`);
+            userInput.value = '';
+            loadingIndicator.classList.remove('hidden');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            const prompt = `Please generate an image based on the following: Start with an image of "${originalDescription}". Then, apply this modification: "${modificationPrompt}". Create a new, positive and enhanced image.`;
+
+            const maxRetries = 5;
+            let retryCount = 0;
+            let delay = 1000;
+
+            while (retryCount < maxRetries) {
+                try {
+                    const payload = { instances: { prompt: prompt }, parameters: { "sampleCount": 1} };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                        addMessage('ai', 'Here is your beautifully modified image!', true);
+                        addMessage('ai', imageUrl, true);
+                    } else {
+                        addMessage('ai', 'Oh no, I couldn\'t quite apply those edits. Perhaps a slightly different description or modification?');
+                        console.error('Unexpected API response structure for image editing:', result);
+                    }
+                    loadingIndicator.classList.add('hidden');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    currentAIMode = 'chat';
+                    return;
+                } catch (error) {
+                    console.error('Error editing image:', error);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        addMessage('ai', 'I\'m having a bit of a challenge with that image edit right now. Let\'s try again soon!');
+                        loadingIndicator.classList.add('hidden');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        currentAIMode = 'chat';
+                    }
+                }
+            }
+        }
+
+        async function summarizeText(textToSummarize) {
+            addMessage('user', `Summarize: "${textToSummarize.substring(0, 50)}..."`);
+            userInput.value = '';
+            loadingIndicator.classList.remove('hidden');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            const prompt = `Please provide a concise and positive summary of the following text: "${textToSummarize}"`;
+
+            const maxRetries = 5;
+            let retryCount = 0;
+            let delay = 1000;
+
+            while (retryCount < maxRetries) {
+                try {
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const summary = result.candidates[0].content.parts[0].text;
+                        addMessage('ai', `Here's a delightful summary for you: ${summary}`);
+                    } else {
+                        addMessage('ai', 'I\'m sorry, I couldn\'t quite summarize that text. Could you provide a bit more context or a different passage?');
+                        console.error('Unexpected API response structure for summarization:', result);
+                    }
+                    loadingIndicator.classList.add('hidden');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    currentAIMode = 'chat';
+                    return;
+                } catch (error) {
+                    console.error('Error summarizing text:', error);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        addMessage('ai', 'Oh dear, I\'m having a little trouble summarizing that right now. Please try again soon!');
+                        loadingIndicator.classList.add('hidden');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        currentAIMode = 'chat';
+                    }
+                }
+            }
+        }
+
+        async function translateText(textToTranslate, targetLanguage) {
+            addMessage('user', `Translate "${textToTranslate.substring(0, 50)}..." to ${targetLanguage}`);
+            userInput.value = '';
+            loadingIndicator.classList.remove('hidden');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            const prompt = `Please translate the following text into ${targetLanguage} with a positive and encouraging tone: "${textToTranslate}"`;
+
+            const maxRetries = 5;
+            let retryCount = 0;
+            let delay = 1000;
+
+            while (retryCount < maxRetries) {
+                try {
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const translation = result.candidates[0].content.parts[0].text;
+                        addMessage('ai', `Here's the wonderful translation for you: ${translation}`);
+                    } else {
+                        addMessage('ai', 'I\'m sorry, I couldn\'t quite translate that. Could you check the text or language?');
+                        console.error('Unexpected API response structure for translation:', result);
+                    }
+                    loadingIndicator.classList.add('hidden');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    currentAIMode = 'chat';
+                    return;
+                } catch (error) {
+                    console.error('Error translating text:', error);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        addMessage('ai', 'Oh dear, I\'m having a little trouble translating that right now. Please try again soon!');
+                        loadingIndicator.classList.add('hidden');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        currentAIMode = 'chat';
+                    }
+                }
+            }
+        }
+
+        async function writeStory(storyPrompt) {
+            addMessage('user', `Write a story about: "${storyPrompt}"`);
+            userInput.value = '';
+            loadingIndicator.classList.remove('hidden');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            const prompt = `Please write a short, creative, and positive story based on the following prompt: "${storyPrompt}"`;
+
+            const maxRetries = 5;
+            let retryCount = 0;
+            let delay = 1000;
+
+            while (retryCount < maxRetries) {
+                try {
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const story = result.candidates[0].content.parts[0].text;
+                        addMessage('ai', `Here's a wonderful story for you: ${story}`);
+                    } else {
+                        addMessage('ai', 'I\'m sorry, I couldn\'t quite write a story from that prompt. Could you try a different idea?');
+                        console.error('Unexpected API response structure for story generation:', result);
+                    }
+                    loadingIndicator.classList.add('hidden');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    currentAIMode = 'chat';
+                    return;
+                } catch (error) {
+                    console.error('Error generating story:', error);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        addMessage('ai', 'Oh dear, I\'m having a little trouble crafting that story right now. Please try again soon!');
+                        loadingIndicator.classList.add('hidden');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        currentAIMode = 'chat';
+                    }
+                }
+            }
+        }
+
+        async function handleUserInput() {
+            const input = userInput.value.trim();
+            if (!input) return;
+
+            if (currentAIMode === 'generate_image') {
+                await generateImage(input);
+            } else if (currentAIMode === 'edit_image') {
+                const parts = input.split('::').map(s => s.trim());
+                if (parts.length === 2) {
+                    await editImage(parts[0], parts[1]);
+                } else {
+                    addMessage('ai', 'To modify an image, please use the format: "original description :: desired modification". For example: "A red car :: change it to blue".');
+                    loadingIndicator.classList.add('hidden');
+                    currentAIMode = 'chat';
+                }
+            } else if (currentAIMode === 'summarize_text') {
+                 await summarizeText(input);
+            } else if (currentAIMode === 'translate_text') {
+                const parts = input.split('::').map(s => s.trim());
+                if (parts.length === 2) {
+                    await translateText(parts[0], parts[1]);
+                } else {
+                    addMessage('ai', 'To translate, please use the format: "Text to translate :: Target Language". For example: "Bonjour :: English".');
+                    loadingIndicator.classList.add('hidden');
+                    currentAIMode = 'chat';
+                }
+            } else if (currentAIMode === 'write_story') {
+                await writeStory(input);
+            }
+            else {
+                await sendChatMessage(input);
+            }
+        }
+
+        // --- Event Listeners ---
+        learnMoreBtn.addEventListener('click', () => {
+            websiteContent.classList.add('hidden');
+            aiChatInterface.classList.remove('hidden');
+            startNewChat();
+        });
+
+        backToWebsiteBtn.addEventListener('click', () => {
+            aiChatInterface.classList.add('hidden');
+            websiteContent.classList.remove('hidden');
+            currentAIMode = 'chat';
+        });
+
+        sendBtn.addEventListener('click', handleUserInput);
+
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleUserInput();
+            }
+        });
+
+        generateImageBtn.addEventListener('click', () => {
+            currentAIMode = 'generate_image';
+            addMessage('ai', 'Wonderful! What kind of image would you like me to create? Please describe it in detail.');
+            userInput.placeholder = "Describe the image you want to generate...";
+            userInput.focus();
+        });
+
+        editImageBtn.addEventListener('click', () => {
+            currentAIMode = 'edit_image';
+            addMessage('ai', 'Fantastic! To modify an image, please describe the original image, then use "::" followed by your desired modification. For example: "A sunny beach with palm trees :: add a vibrant sunset".');
+            userInput.placeholder = "Original description :: desired modification...";
+            userInput.focus();
+        });
+
+        summarizeTextBtn.addEventListener('click', () => {
+            currentAIMode = 'summarize_text';
+            addMessage('ai', 'Excellent! Please paste the text you would like me to summarize. I\'ll provide a concise and positive overview for you!');
+            userInput.placeholder = "Paste text to summarize here...";
+            userInput.focus();
+        });
+
+        translateTextBtn.addEventListener('click', () => {
+            currentAIMode = 'translate_text';
+            addMessage('ai', 'Splendid! What text would you like to translate, and into which language? Please use the format: "Text to translate :: Target Language". For example: "Hello world :: Spanish".');
+            userInput.placeholder = "Text to translate :: Target Language...";
+            userInput.focus();
+        });
+
+        writeStoryBtn.addEventListener('click', () => {
+            currentAIMode = 'write_story';
+            addMessage('ai', 'Oh, how exciting! What wonderful adventure or concept should our story be about? Tell me your prompt!');
+            userInput.placeholder = "Give me a prompt for a story...";
+            userInput.focus();
+        });
+
+        newChatBtn.addEventListener('click', startNewChat);
+
+        // --- Settings Modal Event Listeners ---
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+
+        closeSettingsModalBtn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+        });
+
+        darkThemeBtn.addEventListener('click', () => {
+            applyTheme('dark');
+        });
+
+        lightThemeBtn.addEventListener('click', () => {
+            applyTheme('light');
+        });
+
+        // --- Sidebar Toggle Event Listener ---
+        sidebarToggleBtn.addEventListener('click', () => {
+            aiChatInterface.classList.toggle('sidebar-hidden');
+        });
+
+        // --- Authentication Modal Event Listeners ---
+        signupBtn.addEventListener('click', () => {
+            authModalTitle.textContent = 'Sign Up';
+            authSubmitBtn.textContent = 'Sign Up';
+            toggleAuthModeBtn.textContent = 'Already have an account? Login';
+            authErrorMessage.classList.add('hidden');
+            authForm.dataset.mode = 'signup';
+            authModal.classList.remove('hidden');
+            authEmailInput.value = '';
+            authPasswordInput.value = '';
+        });
+
+        loginBtn.addEventListener('click', () => {
+            authModalTitle.textContent = 'Login';
+            authSubmitBtn.textContent = 'Login';
+            toggleAuthModeBtn.textContent = 'Don\'t have an account? Sign Up';
+            authErrorMessage.classList.add('hidden');
+            authForm.dataset.mode = 'login';
+            authModal.classList.remove('hidden');
+            authEmailInput.value = '';
+            authPasswordInput.value = '';
+        });
+
+        closeAuthModalBtn.addEventListener('click', () => {
+            authModal.classList.add('hidden');
+            authErrorMessage.classList.add('hidden');
+        });
+
+        toggleAuthModeBtn.addEventListener('click', () => {
+            if (authForm.dataset.mode === 'login') {
+                authModalTitle.textContent = 'Sign Up';
+                authSubmitBtn.textContent = 'Sign Up';
+                toggleAuthModeBtn.textContent = 'Already have an account? Login';
+                authForm.dataset.mode = 'signup';
+            } else {
+                authModalTitle.textContent = 'Login';
+                authSubmitBtn.textContent = 'Login';
+                toggleAuthModeBtn.textContent = 'Don\'t have an account? Sign Up';
+                authForm.dataset.mode = 'login';
+            }
+            authErrorMessage.classList.add('hidden'); // Clear error message on mode switch
+            authEmailInput.value = ''; // Clear inputs on mode switch
+            authPasswordInput.value = '';
+        });
+
+        authForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = authEmailInput.value;
+            const password = authPasswordInput.value;
+            authErrorMessage.classList.add('hidden'); // Hide previous errors
+
+            try {
+                if (authForm.dataset.mode === 'signup') {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    console.log("User signed up:", userCredential.user);
+
+                    // Create a user document in Firestore
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${userCredential.user.uid}/profile`, "data");
+                    await setDoc(userDocRef, {
+                        email: userCredential.user.email,
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString()
+                    });
+                    console.log("User profile created in Firestore.");
+
+                    authModal.classList.add('hidden');
+                    addMessage('ai', `Welcome, ${userCredential.user.email}! So glad to have you join Private AI. Let's explore the possibilities!`);
+
+                } else { // login mode
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    console.log("User logged in:", userCredential.user);
+
+                    // Update last login time in Firestore (optional)
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${userCredential.user.uid}/profile`, "data");
+                    await setDoc(userDocRef, { lastLogin: new Date().toISOString() }, { merge: true });
+                    console.log("User last login updated.");
+
+                    authModal.classList.add('hidden');
+                    addMessage('ai', `Welcome back, ${userCredential.user.email}! It's wonderful to see you again. How can I brighten your day?`);
+                }
+            } catch (error) {
+                console.error("Authentication error:", error);
+                let errorMessage = 'An unexpected error occurred. Please try again.';
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'This email is already in use. Try logging in or use a different email.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'The email address is not valid.';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Password is too weak. Please choose a stronger password.';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'Your account has been disabled.';
+                        break;
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        errorMessage = 'Invalid email or password. Please check your credentials.';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage = 'Network error. Please check your internet connection.';
+                        break;
+                    default:
+                        errorMessage = `Authentication failed: ${error.message}`;
+                }
+                authErrorMessage.textContent = errorMessage;
+                authErrorMessage.classList.remove('hidden');
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                addMessage('ai', 'You\'ve been successfully logged out. We\'ll miss you, but hope to see you back soon!');
+                // Optionally clear chat history or reset UI
+                startNewChat(); // Start a new chat for the anonymous user
+            } catch (error) {
+                console.error("Error logging out:", error);
+                addMessage('ai', 'Oh dear, there was a little trouble logging you out. Please try again!');
+            }
+        });
+
+    </script>
+
 </body>
 </html>
